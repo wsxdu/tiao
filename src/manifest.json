@@ -1,0 +1,54 @@
+{
+  "package": "com.dancingline.band9",
+  "name": "跳舞的线",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "minPlatformVersion": 1200,
+  "icon": "/common/logo.png",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    {
+      "name": "system.router"
+    },
+    {
+      "name": "system.storage"
+    },
+    {
+      "name": "system.vibrator"
+    },
+    {
+      "name": "system.app"
+    }
+  ],
+  "config": {
+    "logLevel": "log",
+    "designWidth": 480
+  },
+  "router": {
+    "entry": "pages/index",
+    "pages": {
+      "pages/index": {
+        "name": "index",
+        "component": "index"
+      },
+      "pages/levels": {
+        "name": "levels",
+        "component": "levels"
+      },
+      "pages/game": {
+        "name": "game",
+        "component": "game"
+      },
+      "pages/about": {
+        "name": "about",
+        "component": "about"
+      },
+      "pages/settings": {
+        "name": "settings",
+        "component": "settings"
+      }
+    }
+  }
+}
