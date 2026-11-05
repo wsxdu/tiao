@@ -1,0 +1,563 @@
+<template>
+  <div class="page">
+    <div class="bg"></div>
+
+    <!-- 顶部栏 -->
+    <div class="header">
+      <div class="back" onclick="goBack">
+        <div class="back-arrow"></div>
+      </div>
+      <text class="h-title">选择关卡</text>
+      <text class="h-count">{{unlocked}} / 8</text>
+    </div>
+
+    <!-- 关卡卡片 -->
+    <swiper class="swiper" index="{{current}}" previousmargin="40px" nextmargin="40px" indicator="false" onchange="onChange">
+      <div class="card" onclick="open1" style="opacity:1;">
+        <div class="cover" style="background-color:#0e1a2c;">
+          <div class="cv-el" for="{{(i, item) in cover1}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;background-color:{{item.c}};opacity:{{item.o}};border-radius:{{item.rd}}px;"></div>
+        </div>
+        <text class="c-no">01</text>
+        <text class="c-name">钢琴</text>
+        <text class="c-en">PIANO</text>
+        <div class="stars">
+          <div class="star" for="{{(i, item) in st1}}" style="left:{{i * 30}}px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="c-best">最佳 {{best1}}%</text>
+      </div>
+
+      <div class="card" onclick="open2" style="opacity:{{l2 ? 0.45 : 1}};">
+        <div class="cover" style="background-color:#0d1d16;">
+          <div class="cv-el" for="{{(i, item) in cover2}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;background-color:{{item.c}};opacity:{{item.o}};border-radius:{{item.rd}}px;"></div>
+          <div class="lock" if="{{l2}}">
+            <div class="lock-body"></div>
+            <div class="lock-ring"></div>
+          </div>
+        </div>
+        <text class="c-no">02</text>
+        <text class="c-name">田野</text>
+        <text class="c-en">THE PLAINS</text>
+        <div class="stars">
+          <div class="star" for="{{(i, item) in st2}}" style="left:{{i * 30}}px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="c-best">最佳 {{best2}}%</text>
+      </div>
+
+      <div class="card" onclick="open3" style="opacity:{{l3 ? 0.45 : 1}};">
+        <div class="cover" style="background-color:#20150a;">
+          <div class="cv-el" for="{{(i, item) in cover3}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;background-color:{{item.c}};opacity:{{item.o}};border-radius:{{item.rd}}px;"></div>
+          <div class="lock" if="{{l3}}">
+            <div class="lock-body"></div>
+            <div class="lock-ring"></div>
+          </div>
+        </div>
+        <text class="c-no">03</text>
+        <text class="c-name">沙漠</text>
+        <text class="c-en">THE DESERT</text>
+        <div class="stars">
+          <div class="star" for="{{(i, item) in st3}}" style="left:{{i * 30}}px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="c-best">最佳 {{best3}}%</text>
+      </div>
+
+      <div class="card" onclick="open4" style="opacity:{{l4 ? 0.45 : 1}};">
+        <div class="cover" style="background-color:#0b1a26;">
+          <div class="cv-el" for="{{(i, item) in cover4}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;background-color:{{item.c}};opacity:{{item.o}};border-radius:{{item.rd}}px;"></div>
+          <div class="lock" if="{{l4}}">
+            <div class="lock-body"></div>
+            <div class="lock-ring"></div>
+          </div>
+        </div>
+        <text class="c-no">04</text>
+        <text class="c-name">寒冬</text>
+        <text class="c-en">THE WINTER</text>
+        <div class="stars">
+          <div class="star" for="{{(i, item) in st4}}" style="left:{{i * 30}}px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="c-best">最佳 {{best4}}%</text>
+      </div>
+
+      <div class="card" onclick="open5" style="opacity:{{l5 ? 0.45 : 1}};">
+        <div class="cover" style="background-color:#1b0c22;">
+          <div class="cv-el" for="{{(i, item) in cover5}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;background-color:{{item.c}};opacity:{{item.o}};border-radius:{{item.rd}}px;"></div>
+          <div class="lock" if="{{l5}}">
+            <div class="lock-body"></div>
+            <div class="lock-ring"></div>
+          </div>
+        </div>
+        <text class="c-no">05</text>
+        <text class="c-name">混沌</text>
+        <text class="c-en">THE CHAOS</text>
+        <div class="stars">
+          <div class="star" for="{{(i, item) in st5}}" style="left:{{i * 30}}px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="c-best">最佳 {{best5}}%</text>
+      </div>
+
+      <div class="card" onclick="open6" style="opacity:{{l6 ? 0.45 : 1}};">
+        <div class="cover" style="background-color:#101234;">
+          <div class="cv-el" for="{{(i, item) in cover6}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;background-color:{{item.c}};opacity:{{item.o}};border-radius:{{item.rd}}px;"></div>
+          <div class="lock" if="{{l6}}">
+            <div class="lock-body"></div>
+            <div class="lock-ring"></div>
+          </div>
+        </div>
+        <text class="c-no">06</text>
+        <text class="c-name">水晶</text>
+        <text class="c-en">THE CRYSTAL</text>
+        <div class="stars">
+          <div class="star" for="{{(i, item) in st6}}" style="left:{{i * 30}}px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="c-best">最佳 {{best6}}%</text>
+      </div>
+
+      <div class="card" onclick="open7" style="opacity:{{l7 ? 0.45 : 1}};">
+        <div class="cover" style="background-color:#20160c;">
+          <div class="cv-el" for="{{(i, item) in cover7}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;background-color:{{item.c}};opacity:{{item.o}};border-radius:{{item.rd}}px;"></div>
+          <div class="lock" if="{{l7}}">
+            <div class="lock-body"></div>
+            <div class="lock-ring"></div>
+          </div>
+        </div>
+        <text class="c-no">07</text>
+        <text class="c-name">秋天</text>
+        <text class="c-en">THE AUTUMN</text>
+        <div class="stars">
+          <div class="star" for="{{(i, item) in st7}}" style="left:{{i * 30}}px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="c-best">最佳 {{best7}}%</text>
+      </div>
+
+      <div class="card" onclick="open8" style="opacity:{{l8 ? 0.45 : 1}};">
+        <div class="cover" style="background-color:#121a24;">
+          <div class="cv-el" for="{{(i, item) in cover8}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;background-color:{{item.c}};opacity:{{item.o}};border-radius:{{item.rd}}px;"></div>
+          <div class="lock" if="{{l8}}">
+            <div class="lock-body"></div>
+            <div class="lock-ring"></div>
+          </div>
+        </div>
+        <text class="c-no">08</text>
+        <text class="c-name">山脉</text>
+        <text class="c-en">THE MOUNTAINS</text>
+        <div class="stars">
+          <div class="star" for="{{(i, item) in st8}}" style="left:{{i * 30}}px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="c-best">最佳 {{best8}}%</text>
+      </div>
+    </swiper>
+
+    <div class="dots">
+      <div class="dot" for="{{(i, item) in dots}}" style="left:{{158 + i * 22}}px;background-color:{{item.c}};"></div>
+    </div>
+
+    <text class="hint">左右滑动浏览 · 点击卡片开始</text>
+    <div class="toast" if="{{toast}}">
+      <text class="toast-text">{{toast}}</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import vibrator from '@system.vibrator'
+import { readSave } from '../../common/save.js'
+
+function makeCover(seed, a, b, accent, mid) {
+  const arr = []
+  const sx = 62 + (seed * 53) % 250
+  arr.push({ x: sx, y: 56, w: 56, h: 56, c: accent, o: 0.85, rd: 28 })
+  // 阶梯山体
+  for (let i = 0; i < 3; i++) {
+    const w = 230 - i * 54
+    arr.push({
+      x: Math.round(200 - w / 2),
+      y: 250 - i * 26,
+      w: w,
+      h: 28,
+      c: mid,
+      o: 0.4 + i * 0.18,
+      rd: 4
+    })
+  }
+  // 地面
+  arr.push({ x: 0, y: 322, w: 400, h: 38, c: mid, o: 0.55, rd: 0 })
+  // 3D 路面
+  for (let i = 0; i < 6; i++) {
+    arr.push({
+      x: 172 + i * 17,
+      y: 316 - i * 17,
+      w: 60 - i * 7,
+      h: 16 - i * 1.4,
+      c: i % 2 === 0 ? a : b,
+      o: 1,
+      rd: 3
+    })
+  }
+  // 星点
+  for (let i = 0; i < 3; i++) {
+    arr.push({
+      x: 40 + (seed * 29 + i * 67) % 320,
+      y: 32 + (i * 31) % 70,
+      w: 6,
+      h: 6,
+      c: '#ffffff',
+      o: 0.35,
+      rd: 3
+    })
+  }
+  return arr
+}
+
+export default {
+  private: {
+    current: 0,
+    unlocked: 1,
+    s1: 0, s2: 0, s3: 0, s4: 0, s5: 0, s6: 0, s7: 0, s8: 0,
+    best1: 0, best2: 0, best3: 0, best4: 0, best5: 0, best6: 0, best7: 0, best8: 0,
+    l2: true, l3: true, l4: true, l5: true, l6: true, l7: true, l8: true,
+    accent1: '#37c3ff', accent2: '#ffe066', accent3: '#ffcf70', accent4: '#8fe3ff',
+    accent5: '#ff5fa8', accent6: '#6ef2ff', accent7: '#ffd28a', accent8: '#c6f0ff',
+    cover1: [], cover2: [], cover3: [], cover4: [], cover5: [], cover6: [], cover7: [], cover8: [],
+    st1: [], st2: [], st3: [], st4: [], st5: [], st6: [], st7: [], st8: [],
+    dots: [
+      { c: '#37c3ff' }, { c: '#233246' }, { c: '#233246' }, { c: '#233246' },
+      { c: '#233246' }, { c: '#233246' }, { c: '#233246' }, { c: '#233246' }
+    ],
+    toast: ''
+  },
+
+  onInit() {
+    this.cover1 = makeCover(1, '#eef3fb', '#cfdaea', '#37c3ff', '#22344e')
+    this.cover2 = makeCover(2, '#8ecf72', '#6fb455', '#ffe066', '#1d3a24')
+    this.cover3 = makeCover(3, '#e6a862', '#cf8b42', '#ffcf70', '#3c2812')
+    this.cover4 = makeCover(4, '#cfe9f7', '#a8d3ec', '#8fe3ff', '#22415a')
+    this.cover5 = makeCover(5, '#a25cb5', '#7f3f93', '#ff5fa8', '#33143e')
+    this.cover6 = makeCover(6, '#8494ee', '#6474d4', '#6ef2ff', '#20245c')
+    this.cover7 = makeCover(7, '#e0a35b', '#c1843e', '#ffd28a', '#3a2814')
+    this.cover8 = makeCover(8, '#93a9c0', '#778da6', '#c6f0ff', '#243040')
+    this.refresh()
+  },
+
+  onShow() {
+    this.refresh()
+  },
+
+  refresh() {
+    readSave((s) => {
+      this.unlocked = s.unlocked
+      this.s1 = s.stars[1] || 0
+      this.s2 = s.stars[2] || 0
+      this.s3 = s.stars[3] || 0
+      this.s4 = s.stars[4] || 0
+      this.s5 = s.stars[5] || 0
+      this.s6 = s.stars[6] || 0
+      this.s7 = s.stars[7] || 0
+      this.s8 = s.stars[8] || 0
+      this.best1 = s.best[1] || 0
+      this.best2 = s.best[2] || 0
+      this.best3 = s.best[3] || 0
+      this.best4 = s.best[4] || 0
+      this.best5 = s.best[5] || 0
+      this.best6 = s.best[6] || 0
+      this.best7 = s.best[7] || 0
+      this.best8 = s.best[8] || 0
+      this.l2 = 2 > this.unlocked
+      this.l3 = 3 > this.unlocked
+      this.l4 = 4 > this.unlocked
+      this.l5 = 5 > this.unlocked
+      this.l6 = 6 > this.unlocked
+      this.l7 = 7 > this.unlocked
+      this.l8 = 8 > this.unlocked
+      this.buildStars(s.stars)
+    })
+  },
+
+  buildStars(stars) {
+    const accent = ['#37c3ff', '#ffe066', '#ffcf70', '#8fe3ff', '#ff5fa8', '#6ef2ff', '#ffd28a', '#c6f0ff']
+    for (let n = 1; n <= 8; n++) {
+      const v = stars[n] || 0
+      const arr = []
+      for (let k = 1; k <= 3; k++) {
+        arr.push({ c: k <= v ? accent[n - 1] : '#25324a' })
+      }
+      this['st' + n] = arr
+    }
+  },
+
+  updateDots(idx) {
+    const arr = []
+    for (let i = 0; i < 8; i++) {
+      arr.push({ c: i === idx ? '#37c3ff' : '#233246' })
+    }
+    this.dots = arr
+  },
+
+  onChange(e) {
+    if (e && typeof e.index === 'number') {
+      this.current = e.index
+      this.updateDots(e.index)
+    }
+  },
+
+  goBack() {
+    router.back()
+  },
+
+  showToast(t) {
+    this.toast = t
+    if (this._toastTimer) clearTimeout(this._toastTimer)
+    this._toastTimer = setTimeout(() => {
+      this.toast = ''
+    }, 1600)
+  },
+
+  buzz() {
+    try {
+      vibrator.vibrate({ mode: 'short' })
+    } catch (e) {}
+  },
+
+  open(n) {
+    if (n > this.unlocked) {
+      this.showToast('通关上一关后解锁')
+      this.buzz()
+      return
+    }
+    router.push({ uri: '/pages/game', params: { level: n } })
+  },
+
+  open1() { this.open(1) },
+  open2() { this.open(2) },
+  open3() { this.open(3) },
+  open4() { this.open(4) },
+  open5() { this.open(5) },
+  open6() { this.open(6) },
+  open7() { this.open(7) },
+  open8() { this.open(8) },
+
+  onDestroy() {
+    if (this._toastTimer) clearTimeout(this._toastTimer)
+  }
+}
+</script>
+
+<style>
+.page {
+  width: 480px;
+  height: 1225px;
+  background-color: #070c16;
+  overflow: hidden;
+}
+
+.bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 1225px;
+  background-color: #070c16;
+}
+
+.header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 140px;
+}
+
+.back {
+  position: absolute;
+  left: 20px;
+  top: 54px;
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background-color: #121d30;
+}
+
+.back-arrow {
+  position: absolute;
+  left: 24px;
+  top: 20px;
+  width: 18px;
+  height: 18px;
+  border-left: 4px solid #9db6d6;
+  border-bottom: 4px solid #9db6d6;
+  transform: rotate(45deg);
+}
+
+.h-title {
+  position: absolute;
+  left: 100px;
+  top: 58px;
+  font-size: 34px;
+  color: #eaf4ff;
+  font-weight: bold;
+}
+
+.h-count {
+  position: absolute;
+  left: 356px;
+  top: 64px;
+  font-size: 22px;
+  color: #5d799f;
+}
+
+.swiper {
+  position: absolute;
+  left: 0;
+  top: 150px;
+  width: 480px;
+  height: 780px;
+}
+
+.card {
+  width: 400px;
+  height: 700px;
+  margin-left: 0;
+  border-radius: 28px;
+  background-color: #0e1728;
+  overflow: hidden;
+}
+
+.cover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 400px;
+  height: 360px;
+  overflow: hidden;
+}
+
+.cv-el {
+  position: absolute;
+}
+
+.c-no {
+  position: absolute;
+  left: 28px;
+  top: 376px;
+  font-size: 22px;
+  color: #5d799f;
+  letter-spacing: 2px;
+}
+
+.c-name {
+  position: absolute;
+  left: 28px;
+  top: 412px;
+  font-size: 42px;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.c-en {
+  position: absolute;
+  left: 28px;
+  top: 472px;
+  font-size: 18px;
+  color: #6a8bb5;
+  letter-spacing: 3px;
+}
+
+.stars {
+  position: absolute;
+  left: 28px;
+  top: 510px;
+  width: 120px;
+  height: 22px;
+}
+
+.star {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+
+.c-best {
+  position: absolute;
+  left: 28px;
+  top: 548px;
+  font-size: 20px;
+  color: #8fb3d6;
+}
+
+
+.lock {
+  position: absolute;
+  left: 160px;
+  top: 120px;
+  width: 80px;
+  height: 98px;
+}
+
+.lock-body {
+  position: absolute;
+  left: 10px;
+  top: 38px;
+  width: 60px;
+  height: 54px;
+  border-radius: 12px;
+  background-color: rgba(8, 14, 26, 0.86);
+  border: 3px solid #6b85a6;
+}
+
+.lock-ring {
+  position: absolute;
+  left: 20px;
+  top: 8px;
+  width: 36px;
+  height: 44px;
+  border-radius: 20px;
+  border: 3px solid #6b85a6;
+}
+
+.dots {
+  position: absolute;
+  left: 0;
+  top: 968px;
+  width: 480px;
+  height: 14px;
+}
+
+.dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+}
+
+
+.hint {
+  position: absolute;
+  left: 0;
+  top: 1030px;
+  width: 480px;
+  text-align: center;
+  font-size: 20px;
+  color: #4f6f95;
+}
+
+.toast {
+  position: absolute;
+  left: 90px;
+  top: 1100px;
+  width: 300px;
+  height: 72px;
+  border-radius: 36px;
+  background-color: rgba(20, 32, 52, 0.96);
+}
+
+.toast-text {
+  position: absolute;
+  left: 0;
+  top: 22px;
+  width: 300px;
+  text-align: center;
+  font-size: 22px;
+  color: #bcd6f2;
+}
+</style>
