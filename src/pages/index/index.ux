@@ -1,0 +1,426 @@
+<template>
+  <div class="page" onswipe="onSwipe">
+    <!-- 背景 -->
+    <div class="bg"></div>
+    <div class="spot spot1"></div>
+    <div class="spot spot2"></div>
+    <div class="grid-line" for="{{(i, item) in gridLines}}" style="top:{{item.y}}px;opacity:{{item.o}};"></div>
+
+    <!-- 顶部标识 -->
+    <text class="brand">XIAOMI BAND 9 · VELA</text>
+    <div class="brand-dot"></div>
+
+    <!-- 由代码绘制的“跳舞的线”标志 -->
+    <div class="logo-wrap">
+      <div
+        class="logo-block"
+        for="{{(i, item) in logoBlocks}}"
+        style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.w}}px;background-color:{{item.c}};border-radius:{{item.r}}px;opacity:{{item.o}};"
+      ></div>
+      <div class="logo-tail" style="left:{{tailX}}px;top:{{tailY}}px;"></div>
+    </div>
+
+    <text class="title">跳舞的线</text>
+    <text class="en-title">DANCING LINE</text>
+    <text class="slogan">跟着节奏 · 一笔到底</text>
+
+    <!-- 开始 -->
+    <div class="start-btn" onclick="goLevels">
+      <div class="start-play">
+        <div class="play-tri"></div>
+      </div>
+      <text class="start-text">开始游戏</text>
+    </div>
+
+    <!-- 关于 / 设置 -->
+    <div class="bottom-row">
+      <div class="icon-btn btn-about" onclick="goAbout">
+        <div class="icon-circle">
+          <div class="about-dot"></div>
+          <div class="about-stem"></div>
+          <div class="about-ring"></div>
+        </div>
+        <text class="icon-label">关于</text>
+      </div>
+      <div class="icon-btn btn-gear" onclick="goSettings">
+        <div class="icon-circle">
+          <div class="gear-tooth" for="{{(i, item) in gearTeeth}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.h}}px;border-radius:{{item.r}}px;"></div>
+          <div class="gear-ring"></div>
+          <div class="gear-hole"></div>
+        </div>
+        <text class="icon-label">设置</text>
+      </div>
+    </div>
+
+    <text class="hint">向右滑动 · 进入关卡</text>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+
+const COLORS = ['#4fe0ff', '#5dd0ff', '#74b8ff', '#918fff', '#b477ff', '#d964e8', '#ff5fa8', '#ff7d94']
+
+export default {
+  private: {
+    logoBlocks: [],
+    gearTeeth: [],
+    gridLines: [],
+    tailX: 0,
+    tailY: 0
+  },
+
+  onInit() {
+    this.buildLogo()
+    this.buildGear()
+    this.buildGrid()
+  },
+
+  buildLogo() {
+    const arr = []
+    let lastX = 88
+    let lastY = 420
+    for (let i = 0; i < 14; i++) {
+      const t = i / 13
+      const x = 88 + i * 22
+      // 一条向上跳动的波浪线
+      const bump = Math.sin(t * Math.PI * 1.7) * 46
+      const y = 432 - i * 9 - bump
+      const size = 13 + Math.round(t * 8)
+      arr.push({
+        x: Math.round(x - size / 2),
+        y: Math.round(y - size / 2),
+        w: size,
+        c: COLORS[i % COLORS.length],
+        r: Math.round(size / 3),
+        o: 0.55 + t * 0.45
+      })
+      lastX = x
+      lastY = y
+    }
+    this.logoBlocks = arr
+    this.tailX = Math.round(lastX - 14)
+    this.tailY = Math.round(lastY - 14)
+  },
+
+  buildGear() {
+    const arr = []
+    const cx = 65
+    const cy = 65
+    const r = 46
+    for (let i = 0; i < 8; i++) {
+      const a = (Math.PI * 2 * i) / 8
+      arr.push({
+        x: Math.round(cx + Math.cos(a) * r - 5),
+        y: Math.round(cy + Math.sin(a) * r - 5),
+        w: 10,
+        h: 10,
+        r: 2
+      })
+    }
+    this.gearTeeth = arr
+  },
+
+  buildGrid() {
+    const arr = []
+    for (let i = 0; i < 6; i++) {
+      arr.push({ y: 700 + i * 80, o: 0.05 - i * 0.006 })
+    }
+    this.gridLines = arr
+  },
+
+  goLevels() {
+    router.push({ uri: '/pages/levels' })
+  },
+
+  goAbout() {
+    router.push({ uri: '/pages/about' })
+  },
+
+  goSettings() {
+    router.push({ uri: '/pages/settings' })
+  },
+
+  onSwipe(e) {
+    if (!e) return
+    if (e.direction === 'right' || e.direction === 'left') {
+      router.push({ uri: '/pages/levels' })
+    }
+  }
+}
+</script>
+
+<style>
+.page {
+  width: 480px;
+  height: 1225px;
+  background-color: #070c16;
+  overflow: hidden;
+}
+
+.bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 1225px;
+  background-color: #070c16;
+}
+
+.spot {
+  position: absolute;
+  border-radius: 300px;
+  opacity: 0.16;
+}
+
+.spot1 {
+  width: 600px;
+  height: 600px;
+  left: -140px;
+  top: 40px;
+  background-color: #1260ff;
+}
+
+.spot2 {
+  width: 520px;
+  height: 520px;
+  left: 180px;
+  top: 260px;
+  background-color: #b01fff;
+  opacity: 0.13;
+}
+
+.grid-line {
+  position: absolute;
+  left: 40px;
+  width: 400px;
+  height: 2px;
+  background-color: #7fc8ff;
+  opacity: 0.05;
+}
+
+.brand {
+  position: absolute;
+  left: 0;
+  top: 86px;
+  width: 480px;
+  text-align: center;
+  font-size: 16px;
+  color: #5d799f;
+  letter-spacing: 3px;
+}
+
+.brand-dot {
+  position: absolute;
+  left: 232px;
+  top: 118px;
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background-color: #37c3ff;
+}
+
+.logo-wrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 520px;
+}
+
+.logo-block {
+  position: absolute;
+}
+
+.logo-tail {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background-color: #ffffff;
+  box-shadow: 0 0 24px 6px rgba(90, 220, 255, 0.75);
+}
+
+.title {
+  position: absolute;
+  left: 0;
+  top: 540px;
+  width: 480px;
+  text-align: center;
+  font-size: 72px;
+  color: #ffffff;
+  font-weight: bold;
+  letter-spacing: 4px;
+}
+
+.en-title {
+  position: absolute;
+  left: 0;
+  top: 640px;
+  width: 480px;
+  text-align: center;
+  font-size: 22px;
+  color: #6a8bb5;
+  letter-spacing: 8px;
+}
+
+.slogan {
+  position: absolute;
+  left: 0;
+  top: 700px;
+  width: 480px;
+  text-align: center;
+  font-size: 24px;
+  color: #8fb3d6;
+  letter-spacing: 2px;
+}
+
+.start-btn {
+  position: absolute;
+  left: 90px;
+  top: 800px;
+  width: 300px;
+  height: 104px;
+  border-radius: 52px;
+  background-color: #1aa8ff;
+}
+
+.start-play {
+  position: absolute;
+  left: 62px;
+  top: 32px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+.play-tri {
+  position: absolute;
+  left: 16px;
+  top: 11px;
+  width: 0;
+  height: 0;
+  border-left: 14px solid #ffffff;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+}
+
+.start-text {
+  position: absolute;
+  left: 120px;
+  top: 30px;
+  font-size: 38px;
+  color: #ffffff;
+  font-weight: bold;
+  letter-spacing: 4px;
+}
+
+.bottom-row {
+  position: absolute;
+  left: 0;
+  top: 960px;
+  width: 480px;
+  height: 170px;
+}
+
+.icon-btn {
+  position: absolute;
+  width: 150px;
+  height: 170px;
+}
+
+.btn-about {
+  left: 82px;
+}
+
+.btn-gear {
+  left: 248px;
+}
+
+.icon-circle {
+  position: absolute;
+  left: 25px;
+  top: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: 50px;
+  background-color: #131e33;
+}
+
+.about-ring {
+  position: absolute;
+  left: 30px;
+  top: 30px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  border: 3px solid #5fd6ff;
+}
+
+.about-dot {
+  position: absolute;
+  left: 46px;
+  top: 40px;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #5fd6ff;
+}
+
+.about-stem {
+  position: absolute;
+  left: 46px;
+  top: 52px;
+  width: 8px;
+  height: 16px;
+  border-radius: 4px;
+  background-color: #5fd6ff;
+}
+
+.gear-tooth {
+  position: absolute;
+  border-radius: 2px;
+  background-color: #b48cff;
+}
+
+.gear-ring {
+  position: absolute;
+  left: 38px;
+  top: 38px;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  border: 3px solid #b48cff;
+}
+
+.gear-hole {
+  position: absolute;
+  left: 46px;
+  top: 46px;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #131e33;
+}
+
+.icon-label {
+  position: absolute;
+  left: 0;
+  top: 112px;
+  width: 150px;
+  text-align: center;
+  font-size: 26px;
+  color: #9db6d6;
+}
+
+.hint {
+  position: absolute;
+  left: 0;
+  top: 1162px;
+  width: 480px;
+  text-align: center;
+  font-size: 20px;
+  color: #4f6f95;
+}
+</style>
