@@ -1,0 +1,759 @@
+<template>
+  <div class="game">
+    <!-- 天空 -->
+    <div class="sky sky-a"></div>
+    <div class="sky sky-b"></div>
+    <div class="sky sky-c"></div>
+    <div class="stars-bg">
+      <div class="spark" for="{{(i, item) in sparks}}" style="left:{{item.x}}px;top:{{item.y}}px;width:{{item.w}}px;height:{{item.w}}px;opacity:{{item.o}};"></div>
+    </div>
+    <!-- 地平线光带 -->
+    <div class="horizon" style="background-color:{{accent}};"></div>
+
+    <!-- 3D 路面 / 玩家（代码绘制） -->
+    <div for="{{(i, item) in scene}}" class="{{item.cls}}" style="{{item.s}}"></div>
+
+    <!-- 点击层 -->
+    <div class="tap-layer" onclick="onTap"></div>
+
+    <!-- HUD -->
+    <div class="hud">
+      <text class="lv-name">{{lvNo}} · {{lvName}}</text>
+      <div class="bar-bg">
+        <div class="bar" style="width:{{progressW}}px;background-color:{{accent}};"></div>
+      </div>
+      <text class="pct">{{pct}}%</text>
+    </div>
+
+    <div class="pause" onclick="togglePause">
+      <div class="pbar"></div>
+      <div class="pbar pbar2"></div>
+    </div>
+
+    <!-- 暂停 -->
+    <div class="overlay" if="{{state == 'pause'}}">
+      <div class="panel">
+        <text class="p-title">已暂停</text>
+        <text class="p-sub">{{lvName}} · {{pct}}%</text>
+        <div class="btn primary" onclick="resume">
+          <text class="btn-text">继续游戏</text>
+        </div>
+        <div class="btn ghost" onclick="quit">
+          <text class="btn-text dim">退出关卡</text>
+        </div>
+      </div>
+    </div>
+
+    <!-- 失败 -->
+    <div class="overlay" if="{{state == 'fail'}}">
+      <div class="panel">
+        <text class="p-title">挑战失败</text>
+        <text class="p-sub">{{failText}} · 进度 {{pct}}%</text>
+        <div class="btn primary" onclick="retry">
+          <text class="btn-text">重新开始</text>
+        </div>
+        <div class="btn ghost" onclick="quit">
+          <text class="btn-text dim">返回关卡</text>
+        </div>
+      </div>
+    </div>
+
+    <!-- 过关 -->
+    <div class="overlay" if="{{state == 'win'}}">
+      <div class="panel">
+        <text class="p-title">过关</text>
+        <div class="win-stars">
+          <div class="wstar" for="{{(i, item) in winStars}}" style="left:{{item.x}}px;top:{{item.y}}px;width:26px;height:26px;background-color:{{item.c}};"></div>
+        </div>
+        <text class="p-sub">{{lvName}} · 完成度 100%</text>
+        <div class="btn primary" onclick="nextLevel" if="{{hasNext}}">
+          <text class="btn-text">下一关</text>
+        </div>
+        <div class="btn primary" onclick="quit" if="{{!hasNext}}">
+          <text class="btn-text">返回关卡</text>
+        </div>
+        <div class="btn ghost" onclick="quit" if="{{hasNext}}">
+          <text class="btn-text dim">返回关卡</text>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import vibrator from '@system.vibrator'
+import LEVELS from '../../common/levels.js'
+import { readSave, writeSave } from '../../common/save.js'
+
+const DX = [0, 1, 0, -1]
+const DZ = [1, 0, -1, 0]
+const BACK = 5
+const FOCAL = 300
+const CAM_H = 9
+const HORIZON = 470
+const SLOTS = 24
+
+export default {
+  private: {
+    level: 1,
+    scene: [],
+    sparks: [],
+    lvName: '',
+    lvNo: '',
+    accent: '#37c3ff',
+    pct: 0,
+    progressW: 0,
+    state: 'play',
+    failText: '',
+    winStars: [],
+    hasNext: false
+  },
+
+  onInit() {
+    this._tick = this.tick.bind(this)
+    this._running = false
+    this.buildSparks()
+  },
+
+  onReady() {
+    this.setupLevel()
+    this.startTick()
+  },
+
+  onShow() {
+    const lv = Math.floor(Number(this.level))
+    if (this._initedLv !== lv) this.setupLevel()
+    if (this.state == 'play') this.startTick()
+  },
+
+  onHide() {
+    this.stopTick()
+  },
+
+  onDestroy() {
+    this.stopTick()
+  },
+
+  buildSparks() {
+    const arr = []
+    for (let i = 0; i < 12; i++) {
+      arr.push({
+        x: Math.round((i * 97 + 37) % 460),
+        y: Math.round((i * 43 + 20) % 380),
+        w: i % 3 === 0 ? 4 : 2,
+        o: 0.2 + (i % 4) * 0.12
+      })
+    }
+    this.sparks = arr
+  },
+
+  setupLevel() {
+    let lv = Math.floor(Number(this.level))
+    if (!(lv >= 1 && lv <= 8)) lv = 1
+    this.lv = lv
+    this._initedLv = lv
+    const meta = LEVELS[lv - 1]
+    this.meta = meta
+    this.path = meta.cells
+    this.speed = meta.speed
+    this.colA = meta.a
+    this.colB = meta.b
+    this.accent = meta.accent
+    this.lvName = meta.name
+    this.lvNo = ('0' + lv).slice(-2)
+    this.hasNext = lv < 8
+
+    // 段落信息：每段的末端格点在路径中的下标
+    const info = []
+    let idx = 0
+    for (let i = 0; i < meta.segs.length; i++) {
+      idx += meta.segs[i].len
+      info.push({ end: idx, dir: meta.segs[i].dir })
+    }
+    this.segInfo = info
+    this.failCount = 0
+    this.resetRun()
+  },
+
+  resetRun() {
+    this.px = 0
+    this.pz = 0
+    this.dir = 0
+    this.angle = 0
+    this.targetA = 0
+    this.segIdx = 0
+    this.pathIdx = 0
+    this.offDist = 0
+    this.offT = 0
+    this.pct = 0
+    this.progressW = 0
+    this._fc = 0
+    this.turnQueued = false
+    this.state = 'play'
+    this.scene = []
+    this.last = Date.now()
+  },
+
+  startTick() {
+    if (this._running) return
+    this._running = true
+    this.last = Date.now()
+    if (this.timer) clearTimeout(this.timer)
+    this.timer = setTimeout(this._tick, 16)
+  },
+
+  stopTick() {
+    this._running = false
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
+  },
+
+  tick() {
+    if (!this._running) return
+    if (this.state != 'play') {
+      this.stopTick()
+      return
+    }
+    try {
+      this.step()
+    } catch (e) {
+      console.error('game step error', e)
+      this.fail('运行异常')
+      return
+    }
+    if (this._running) {
+      this.timer = setTimeout(this._tick, 16)
+    }
+  },
+
+  step() {
+    const now = Date.now()
+    let dt = (now - this.last) / 1000
+    this.last = now
+    if (!isFinite(dt) || dt < 0) dt = 0.016
+    if (dt > 0.09) dt = 0.09
+
+    // 相机角度平滑跟随
+    const diff = this.targetA - this.angle
+    if (Math.abs(diff) > 0.0015) {
+      const k = dt * 14
+      this.angle += diff * (k > 1 ? 1 : k)
+    } else {
+      this.angle = this.targetA
+    }
+
+    // 前进
+    const vx = DX[this.dir]
+    const vz = DZ[this.dir]
+    this.px += vx * this.speed * dt
+    this.pz += vz * this.speed * dt
+
+    this.updateIdx()
+
+    // 已预约转弯且到达弯点则转向
+    if (this.turnQueued) {
+      const seg = this.segInfo[this.segIdx]
+      const bend = seg ? this.path[seg.end] : null
+      if (bend) {
+        const bd = Math.abs(bend.x - this.px) + Math.abs(bend.z - this.pz)
+        if (bd < 0.45) this.doTurn()
+      }
+    }
+
+    if (this.offDist > 1.05) {
+      this.offT += dt
+      if (this.offT > 0.2) {
+        this.fail('掉下路面')
+        return
+      }
+    } else {
+      this.offT = 0
+    }
+
+    const lastIdx = this.path.length - 1
+    if (this.pathIdx >= lastIdx && this.offDist < 1.2) {
+      this.px = this.path[lastIdx].x
+      this.pz = this.path[lastIdx].z
+      this.win()
+      return
+    }
+
+    this.renderScene()
+
+    this._fc = (this._fc + 1) % 4
+    if (this._fc === 0) {
+      let p = Math.round((this.pathIdx / lastIdx) * 100)
+      if (p > 100) p = 100
+      if (p < 0) p = 0
+      if (p !== this.pct) {
+        this.pct = p
+        this.progressW = Math.round(p * 3.2)
+      }
+    }
+  },
+
+  updateIdx() {
+    const path = this.path
+    const from = Math.max(0, this.pathIdx - 2)
+    const to = Math.min(path.length - 1, this.pathIdx + 12)
+    let best = this.pathIdx
+    let bestD = 1e9
+    for (let i = from; i <= to; i++) {
+      const c = path[i]
+      const dx = c.x - this.px
+      const dz = c.z - this.pz
+      const d = dx * dx + dz * dz
+      if (d < bestD) {
+        bestD = d
+        best = i
+      }
+    }
+    this.pathIdx = best
+    this.offDist = Math.sqrt(bestD)
+  },
+
+  renderScene() {
+    const sinA = Math.sin(this.angle)
+    const cosA = Math.cos(this.angle)
+    const camX = this.px - sinA * BACK
+    const camZ = this.pz - cosA * BACK
+    const path = this.path
+    const base = Math.max(0, this.pathIdx - 3)
+    const arr = []
+
+    // 由远及近绘制路面
+    for (let i = SLOTS - 1; i >= 0; i--) {
+      const c = path[base + i]
+      if (!c) continue
+      const dx = c.x - camX
+      const dz = c.z - camZ
+      const fwd = dx * sinA + dz * cosA
+      if (fwd < 0.9 || fwd > 32) continue
+      const rgt = dx * cosA - dz * sinA
+      const sc = FOCAL / fwd
+      const w = sc * 1.9
+      const h = (CAM_H * FOCAL) / (fwd * (fwd + 0.85)) * 1.22
+      const l = 240 + rgt * sc - w / 2
+      const t = HORIZON + (CAM_H * FOCAL) / fwd - h / 2
+      const col = ((c.x + c.z) & 1) ? this.colA : this.colB
+      arr.push({
+        cls: 'tile',
+        s: 'left:' + Math.round(l) + 'px;top:' + Math.round(t) + 'px;width:' + Math.round(w) + 'px;height:' + Math.round(h) + 'px;background-color:' + col + ';'
+      })
+    }
+
+    // 弯点提示方块
+    const segN = this.segInfo[this.segIdx]
+    const bendN = segN ? path[segN.end] : null
+    if (bendN) {
+      const bx = bendN.x - camX
+      const bz = bendN.z - camZ
+      const bf = bx * sinA + bz * cosA
+      const br = bx * cosA - bz * sinA
+      if (bf > 0.9 && bf < 32) {
+        const bsc = FOCAL / bf
+        const bsz = Math.round(bsc * 0.9)
+        const bl = 240 + br * bsc - bsz / 2
+        const bt = HORIZON + (CAM_H * FOCAL) / bf - bsz / 2
+        arr.push({
+          cls: 'bend-mark',
+          s: 'left:' + Math.round(bl) + 'px;top:' + Math.round(bt) + 'px;width:' + bsz + 'px;height:' + bsz + 'px;border-color:' + this.accent + ';background-color:' + this.accent + ';'
+        })
+      }
+    }
+
+    // 拖尾
+    const vx = DX[this.dir]
+    const vz = DZ[this.dir]
+    for (let k = 3; k >= 1; k--) {
+      const wx = this.px - vx * k * 0.36
+      const wz = this.pz - vz * k * 0.36
+      const dx = wx - camX
+      const dz = wz - camZ
+      const fwd = dx * sinA + dz * cosA
+      const rgt = dx * cosA - dz * sinA
+      if (fwd < 1) continue
+      const sc = FOCAL / fwd
+      const size = Math.round(sc * 0.5) - k * 2
+      const l = 240 + rgt * sc - size / 2
+      const t = HORIZON + (CAM_H * FOCAL) / fwd - size / 2
+      arr.push({
+        cls: 'trail',
+        s: 'left:' + Math.round(l) + 'px;top:' + Math.round(t) + 'px;width:' + size + 'px;height:' + size + 'px;background-color:' + this.accent + ';opacity:' + (0.5 - k * 0.1) + ';'
+      })
+    }
+
+    // 玩家方块
+    const pdx = this.px - camX
+    const pdz = this.pz - camZ
+    const pfwd = pdx * sinA + pdz * cosA
+    const prgt = pdx * cosA - pdz * sinA
+    const psc = FOCAL / (pfwd > 1 ? pfwd : 1)
+    const psize = Math.round(psc * 0.62)
+    const pl = 240 + prgt * psc - psize / 2
+    const pt = HORIZON + (CAM_H * FOCAL) / (pfwd > 1 ? pfwd : 1) - psize / 2
+    arr.push({
+      cls: 'player',
+      s: 'left:' + Math.round(pl) + 'px;top:' + Math.round(pt) + 'px;width:' + psize + 'px;height:' + psize + 'px;border-color:' + this.accent + ';'
+    })
+
+    this.scene = arr
+  },
+
+  onTap() {
+    if (this.state != 'play') return
+    if (!this.segInfo[this.segIdx]) return
+    if (this.segInfo[this.segIdx + 1] == null) return
+    // 点击即预约在下一个弯点转向（与手游一致：提前点也可以）
+    this.turnQueued = true
+  },
+
+  doTurn() {
+    const seg = this.segInfo[this.segIdx]
+    const next = this.segInfo[this.segIdx + 1]
+    if (!seg || !next) return
+    const bend = this.path[seg.end]
+    if (!bend) return
+    this.px = bend.x
+    this.pz = bend.z
+    let d = next.dir - this.dir
+    if (d === 3) d = -1
+    if (d === -3) d = 1
+    this.targetA += d * Math.PI / 2
+    this.dir = next.dir
+    this.segIdx++
+    this.turnQueued = false
+  },
+
+  togglePause() {
+    if (this.state == 'play') {
+      this.state = 'pause'
+      this.stopTick()
+    } else if (this.state == 'pause') {
+      this.resume()
+    }
+  },
+
+  resume() {
+    if (this.state != 'pause') return
+    this.state = 'play'
+    this.last = Date.now()
+    this.startTick()
+  },
+
+  retry() {
+    if (this._retryLock) return
+    this._retryLock = true
+    setTimeout(() => {
+      this._retryLock = false
+    }, 400)
+    this.resetRun()
+    this.startTick()
+  },
+
+  quit() {
+    this.stopTick()
+    this.state = 'pause'
+    router.back()
+  },
+
+  nextLevel() {
+    this.stopTick()
+    if (this.lv < 8) {
+      router.replace({ uri: '/pages/game', params: { level: this.lv + 1 } })
+    } else {
+      router.back()
+    }
+  },
+
+  win() {
+    this.state = 'win'
+    this.stopTick()
+    this.pct = 100
+    this.progressW = 320
+    this.renderScene()
+
+    let stars = 3
+    if (this.failCount >= 1) stars = 2
+    if (this.failCount >= 3) stars = 1
+    const arr = []
+    for (let i = 0; i < 3; i++) {
+      arr.push({ x: 130 + i * 46, y: 0, c: i < stars ? this.accent : '#26344c' })
+    }
+    this.winStars = arr
+    this.buzz()
+
+    readSave((s) => {
+      if (s.unlocked < this.lv + 1) s.unlocked = this.lv + 1
+      if (s.unlocked > 8) s.unlocked = 8
+      const old = s.stars[this.lv] || 0
+      s.stars[this.lv] = old > stars ? old : stars
+      s.best[this.lv] = 100
+      writeSave(s)
+    })
+  },
+
+  fail(msg) {
+    if (this.state != 'play') return
+    this.state = 'fail'
+    this.failCount = (this.failCount || 0) + 1
+    this.failText = msg
+    this.stopTick()
+    this.buzz()
+  },
+
+  buzz() {
+    try {
+      vibrator.vibrate({ mode: 'short' })
+    } catch (e) {}
+  }
+}
+</script>
+
+<style>
+.game {
+  width: 480px;
+  height: 1225px;
+  background-color: #06090f;
+  overflow: hidden;
+}
+
+.sky {
+  position: absolute;
+  left: 0;
+  width: 480px;
+}
+
+.sky-a {
+  top: 0;
+  height: 300px;
+  background-color: #05080e;
+}
+
+.sky-b {
+  top: 300px;
+  height: 110px;
+  background-color: #0a1322;
+}
+
+.sky-c {
+  top: 410px;
+  height: 62px;
+  background-color: #122036;
+}
+
+.stars-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 470px;
+}
+
+.spark {
+  position: absolute;
+  border-radius: 4px;
+  background-color: #cfe6ff;
+}
+
+.horizon {
+  position: absolute;
+  left: 0;
+  top: 468px;
+  width: 480px;
+  height: 3px;
+  opacity: 0.5;
+}
+
+.tile {
+  position: absolute;
+  z-index: 10;
+}
+
+.trail {
+  position: absolute;
+  border-radius: 8px;
+}
+
+.bend-mark {
+  position: absolute;
+  border-radius: 10px;
+  border: 3px solid #ffffff;
+  opacity: 0.85;
+}
+
+.player {
+  position: absolute;
+  border-radius: 9px;
+  background-color: #ffffff;
+  border: 3px solid #37c3ff;
+}
+
+.tap-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 1225px;
+  z-index: 50;
+}
+
+.hud {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 120px;
+  z-index: 60;
+}
+
+.lv-name {
+  position: absolute;
+  left: 28px;
+  top: 34px;
+  font-size: 24px;
+  color: #dfeeff;
+  font-weight: bold;
+}
+
+.bar-bg {
+  position: absolute;
+  left: 28px;
+  top: 78px;
+  width: 330px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #1b293f;
+}
+
+.bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.pct {
+  position: absolute;
+  left: 372px;
+  top: 68px;
+  font-size: 20px;
+  color: #7f9cbe;
+}
+
+.pause {
+  position: absolute;
+  left: 392px;
+  top: 28px;
+  width: 66px;
+  height: 66px;
+  border-radius: 33px;
+  background-color: #121d30;
+  z-index: 70;
+}
+
+.pbar {
+  position: absolute;
+  left: 25px;
+  top: 21px;
+  width: 7px;
+  height: 24px;
+  border-radius: 3px;
+  background-color: #8fb3d6;
+}
+
+.pbar2 {
+  left: 37px;
+}
+
+.overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 1225px;
+  background-color: rgba(4, 8, 15, 0.72);
+  z-index: 80;
+}
+
+.panel {
+  position: absolute;
+  left: 60px;
+  top: 380px;
+  width: 360px;
+  height: 430px;
+  border-radius: 30px;
+  background-color: #0f1a2c;
+}
+
+.p-title {
+  position: absolute;
+  left: 0;
+  top: 46px;
+  width: 360px;
+  text-align: center;
+  font-size: 46px;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.p-sub {
+  position: absolute;
+  left: 0;
+  top: 118px;
+  width: 360px;
+  text-align: center;
+  font-size: 24px;
+  color: #8fb3d6;
+}
+
+.btn {
+  position: absolute;
+  left: 40px;
+  width: 280px;
+  height: 84px;
+  border-radius: 42px;
+}
+
+.btn.primary {
+  top: 194px;
+  background-color: #1aa8ff;
+}
+
+.btn.ghost {
+  top: 298px;
+  background-color: #182740;
+}
+
+.btn-text {
+  position: absolute;
+  left: 0;
+  top: 24px;
+  width: 280px;
+  text-align: center;
+  font-size: 30px;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.btn-text.dim {
+  color: #9db6d6;
+}
+
+.win-stars {
+  position: absolute;
+  left: 0;
+  top: 150px;
+  width: 360px;
+  height: 60px;
+}
+
+.wstar {
+  position: absolute;
+  border-radius: 8px;
+}
+</style>
